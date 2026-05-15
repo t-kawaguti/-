@@ -1,0 +1,138 @@
+
+> construction-camera-app@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.5:3000
+- Environments: .env.local
+✓ Ready in 308ms
+
+ GET / 200 in 433ms (next.js: 275ms, application-code: 158ms)
+ GET /api/auth/session 200 in 531ms (next.js: 511ms, application-code: 20ms)
+ GET /api/auth/session 200 in 30ms (next.js: 12ms, application-code: 17ms)
+ GET / 200 in 57ms (next.js: 8ms, application-code: 50ms)
+ GET /api/auth/session 200 in 15ms (next.js: 6ms, application-code: 10ms)
+ GET /api/drive/blackboard-images 200 in 3.2s (next.js: 658ms, application-code: 2.6s)
+ GET / 200 in 52ms (next.js: 8ms, application-code: 44ms)
+ GET /api/auth/session 200 in 18ms (next.js: 7ms, application-code: 11ms)
+✓ Compiled in 490ms
+ GET /api/auth/session 200 in 28ms (next.js: 15ms, application-code: 13ms)
+ GET / 200 in 50ms (next.js: 10ms, application-code: 40ms)
+ GET /api/auth/session 200 in 16ms (next.js: 6ms, application-code: 10ms)
+ GET /api/auth/session 200 in 29ms (next.js: 13ms, application-code: 16ms)
+ GET / 200 in 55ms (next.js: 7ms, application-code: 48ms)
+ GET /api/auth/session 200 in 15ms (next.js: 6ms, application-code: 10ms)
+✓ Compiled in 41ms
+✓ Compiled in 541ms
+ GET / 200 in 173ms (next.js: 70ms, application-code: 103ms)
+ GET / 200 in 58ms (next.js: 8ms, application-code: 50ms)
+ GET / 200 in 54ms (next.js: 33ms, application-code: 21ms)
+ GET / 200 in 23ms (next.js: 10ms, application-code: 12ms)
+ GET /api/auth/session 200 in 288ms (next.js: 251ms, application-code: 37ms)
+ GET / 200 in 98ms (next.js: 7ms, application-code: 91ms)
+ GET /api/auth/session 200 in 21ms (next.js: 8ms, application-code: 13ms)
+ GET /api/auth/providers 200 in 38ms (next.js: 13ms, application-code: 25ms)
+ GET /api/auth/csrf 200 in 15ms (next.js: 7ms, application-code: 8ms)
+(node:19519) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ POST /api/auth/signin/google 200 in 117ms (next.js: 7ms, application-code: 109ms)
+ GET /api/auth/callback/google?state=IjaTy6QxPH1vRFOm1OsOE1LqR5tBwdfLQ1no_m5_8nI&iss=https://accounts.google.com&code=4/0AeoWuM-ekuqTDbzEi8KgyM12-_j5dXhqhvKkSHGoqdaYJslmHAqyjhKGMZyl7XfSOqslNQ&scope=email%20profile%20https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/calendar.events%20https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email%20openid&authuser=0&prompt=consent 302 in 329ms (next.js: 8ms, application-code: 321ms)
+ GET / 200 in 57ms (next.js: 7ms, application-code: 50ms)
+ GET /api/auth/session 200 in 16ms (next.js: 7ms, application-code: 9ms)
+ POST /api/sync 200 in 10.2s (next.js: 851ms, application-code: 9.4s)
+ GET /api/drive/list?folderId=root 200 in 1085ms (next.js: 93ms, application-code: 993ms)
+ GET /api/drive/list?folderId=root 200 in 1063ms (next.js: 76ms, application-code: 987ms)
+ GET /api/drive/list?folderId=1WkuS7p-CAsH6h-RLouQIdabGWC62tOV1 200 in 613ms (next.js: 6ms, application-code: 608ms)
+ GET /api/drive/list?folderId=1iCqxPZQexp8u0gt4GLPty2iRTAyNNfpQ 200 in 320ms (next.js: 4ms, application-code: 316ms)
+ GET /api/drive/list?folderId=1Zl6aBwXj4z2rSa92THSxBMGf_pLwhUyM 200 in 328ms (next.js: 5ms, application-code: 322ms)
+ GET /api/auth/session 200 in 22ms (next.js: 9ms, application-code: 13ms)
+ GET /api/auth/session 200 in 24ms (next.js: 9ms, application-code: 15ms)
+ GET / 200 in 100ms (next.js: 26ms, application-code: 75ms)
+[next-auth][error][OAUTH_CALLBACK_ERROR] 
+https://next-auth.js.org/errors#oauth_callback_error State cookie was missing. {
+  error: Error [OAuthCallbackError]: State cookie was missing.
+      at ignore-listed frames {
+    code: undefined
+  },
+  providerId: 'google',
+  message: 'State cookie was missing.'
+}
+ GET /api/auth/callback/google?state=IjaTy6QxPH1vRFOm1OsOE1LqR5tBwdfLQ1no_m5_8nI&iss=https://accounts.google.com&code=4/0AeoWuM9avZBuyaoiWyHI5EvQWPCvCH_RnmUfQstNV_S7543OJVK5kmr0qElYWgQCyA2UPw&scope=email%20profile%20https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/calendar.events%20https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email%20openid&authuser=0&prompt=consent 302 in 349ms (next.js: 15ms, application-code: 334ms)
+ GET /api/auth/error?error=OAuthCallback 302 in 7ms (next.js: 3ms, application-code: 5ms)
+ GET /api/auth/signin?error=OAuthCallback 200 in 7ms (next.js: 941µs, application-code: 6ms)
+ GET / 200 in 44ms (next.js: 6ms, application-code: 37ms)
+ GET /api/auth/session 200 in 15ms (next.js: 6ms, application-code: 9ms)
+ GET /api/auth/providers 200 in 14ms (next.js: 6ms, application-code: 7ms)
+ GET /api/auth/csrf 200 in 9ms (next.js: 2ms, application-code: 6ms)
+ POST /api/auth/signin/google 200 in 80ms (next.js: 6ms, application-code: 73ms)
+ GET /api/auth/callback/google?state=3Mfh4_0tGq9-4a-sXQ9MfgFbHQQWqrrxvykSbOqxte8&iss=https://accounts.google.com&code=4/0AeoWuM9NGQa1FdzVIjk0AOeMFQpriv21u6CQ4CtWhu76K7jNyMnLoClSsP9Bsl7oYnwssg&scope=email%20profile%20https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/calendar.events%20https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email%20openid&authuser=0&prompt=consent 302 in 352ms (next.js: 9ms, application-code: 344ms)
+ GET / 200 in 48ms (next.js: 4ms, application-code: 44ms)
+ GET /api/auth/session 200 in 15ms (next.js: 7ms, application-code: 8ms)
+ GET /api/auth/session 200 in 68ms (next.js: 23ms, application-code: 45ms)
+ GET /api/auth/session 200 in 20ms (next.js: 8ms, application-code: 12ms)
+ GET /api/auth/session 200 in 25ms (next.js: 11ms, application-code: 15ms)
+ GET / 200 in 53ms (next.js: 6ms, application-code: 47ms)
+ GET /api/auth/session 200 in 15ms (next.js: 6ms, application-code: 9ms)
+ GET /api/auth/session 200 in 19ms (next.js: 8ms, application-code: 11ms)
+ GET /api/auth/session 200 in 22ms (next.js: 11ms, application-code: 11ms)
+ POST /api/sync 200 in 7.9s (next.js: 7ms, application-code: 7.9s)
+ GET /api/drive/list?folderId=root 200 in 1121ms (next.js: 8ms, application-code: 1113ms)
+ GET /api/drive/list?folderId=root 200 in 1265ms (next.js: 13ms, application-code: 1252ms)
+ GET /api/auth/session 200 in 18ms (next.js: 8ms, application-code: 11ms)
+ GET /api/drive/list?folderId=root 200 in 1152ms (next.js: 5ms, application-code: 1147ms)
+[next-auth][error][OAUTH_CALLBACK_ERROR] 
+https://next-auth.js.org/errors#oauth_callback_error State cookie was missing. {
+  error: Error [OAuthCallbackError]: State cookie was missing.
+      at ignore-listed frames {
+    code: undefined
+  },
+  providerId: 'google',
+  message: 'State cookie was missing.'
+}
+ GET /api/auth/callback/google?state=3Mfh4_0tGq9-4a-sXQ9MfgFbHQQWqrrxvykSbOqxte8&iss=https://accounts.google.com&code=4/0AeoWuM9LfgBtAVKDofKzcyPUAjeuoBp_wRgrZFlxKj5mhzBqQGRGZprDgT4y29donNDgmg&scope=email%20profile%20https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/calendar.events%20https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email%20openid&authuser=0&prompt=consent 302 in 196ms (next.js: 8ms, application-code: 188ms)
+ GET /api/auth/error?error=OAuthCallback 302 in 7ms (next.js: 2ms, application-code: 5ms)
+ GET /api/auth/signin?error=OAuthCallback 200 in 8ms (next.js: 1378µs, application-code: 6ms)
+ GET /api/auth/signin?error=OAuthCallback 200 in 16ms (next.js: 8ms, application-code: 8ms)
+ GET /api/auth/signin?error=OAuthCallback 200 in 23ms (next.js: 9ms, application-code: 13ms)
+ GET /api/auth/signin?error=OAuthCallback 200 in 18ms (next.js: 8ms, application-code: 10ms)
+ GET / 200 in 57ms (next.js: 7ms, application-code: 49ms)
+ GET /api/auth/session 200 in 13ms (next.js: 5ms, application-code: 7ms)
+ GET /api/auth/providers 200 in 26ms (next.js: 6ms, application-code: 20ms)
+ GET /api/auth/csrf 200 in 8ms (next.js: 1682µs, application-code: 6ms)
+ POST /api/auth/signin/google 200 in 92ms (next.js: 5ms, application-code: 87ms)
+ GET /api/auth/callback/google?state=7la6gH5a3q8tHi4CG26gTTKqvwKPCFhJaDtthATq7ls&iss=https://accounts.google.com&code=4/0AeoWuM-DSRjM8vk2fYX-8g53I92T28A5wOyAVqFIT-t5kLcpoCSIWe8IB8K39Zv5TCM6WA&scope=email%20profile%20https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/calendar.events%20https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email%20openid&authuser=0&prompt=consent 302 in 321ms (next.js: 7ms, application-code: 314ms)
+ GET / 200 in 32ms (next.js: 4ms, application-code: 28ms)
+ GET /api/auth/session 200 in 17ms (next.js: 7ms, application-code: 10ms)
+ GET /api/auth/session 200 in 19ms (next.js: 8ms, application-code: 11ms)
+ GET /apple-touch-icon-precomposed.png 404 in 127ms (next.js: 94ms, application-code: 34ms)
+ GET /apple-touch-icon.png 404 in 123ms (next.js: 101ms, application-code: 23ms)
+ GET /apple-touch-icon-120x120-precomposed.png 404 in 41ms (next.js: 4ms, application-code: 36ms)
+ GET /apple-touch-icon-120x120.png 404 in 38ms (next.js: 5ms, application-code: 33ms)
+ GET /apple-touch-icon.png 404 in 43ms (next.js: 5ms, application-code: 38ms)
+ GET /apple-touch-icon.png 404 in 39ms (next.js: 5ms, application-code: 34ms)
+ GET /api/auth/session 200 in 17ms (next.js: 6ms, application-code: 10ms)
+ GET /apple-touch-icon-120x120-precomposed.png 404 in 55ms (next.js: 9ms, application-code: 46ms)
+ GET /apple-touch-icon-120x120.png 404 in 17ms (next.js: 1511µs, application-code: 16ms)
+ GET /apple-touch-icon.png 404 in 26ms (next.js: 2ms, application-code: 23ms)
+ GET /apple-touch-icon.png 404 in 28ms (next.js: 2ms, application-code: 25ms)
+ GET / 200 in 47ms (next.js: 9ms, application-code: 39ms)
+ POST /api/auth/_log 200 in 9ms (next.js: 4ms, application-code: 5ms)
+ GET /api/auth/session 200 in 11ms (next.js: 4ms, application-code: 7ms)
+ GET /api/auth/session 200 in 18ms (next.js: 8ms, application-code: 10ms)
+ POST /api/auth/_log 200 in 8ms (next.js: 4ms, application-code: 4ms)
+ GET / 200 in 55ms (next.js: 6ms, application-code: 49ms)
+ GET /api/auth/session 200 in 17ms (next.js: 7ms, application-code: 10ms)
+ GET /api/auth/session 200 in 72ms (next.js: 27ms, application-code: 45ms)
+⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.5:3000
+- Environments: .env.local
+✓ Ready in 304ms
+⚠ `eslint` configuration in next.config.ts is no longer supported. See more info here: https://nextjs.org/docs/app/api-reference/cli/next#next-lint-options
+⚠ Invalid next.config.ts options detected: 
+⚠     Unrecognized key(s) in object: 'eslint'
+⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+
+[?25h
