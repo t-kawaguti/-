@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Webcam from "react-webcam";
-import { Camera, Save, FileText, History, X, LogIn, LogOut, Home as HomeIcon, Folder, FileSpreadsheet, ChevronRight, FilePlus, FolderOpen, Image as ImageIcon, MapPin } from "lucide-react";
+import { Camera, Save, FileText, History, X, LogIn, LogOut, Home as HomeIcon, Folder, FileSpreadsheet, ChevronRight, FilePlus, FolderOpen, Image as ImageIcon, MapPin, ClipboardList } from "lucide-react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import dynamic from "next/dynamic";
 import styles from "./page.module.css";
@@ -78,6 +78,12 @@ export default function Home() {
   const [isZoomSupported, setIsZoomSupported] = useState(true);
   const [showBlackboard, setShowBlackboard] = useState(true);
 
+  // プリセット関連の状態
+  const [presets, setPresets] = useState<any[]>([]);
+  const [showPresetModal, setShowPresetModal] = useState(false);
+  const [isLoadingPresets, setIsLoadingPresets] = useState(false);
+  const [isSavingPreset, setIsSavingPreset] = useState(false);
+
   const { data: session } = useSession();
 
   const videoConstraints = {
@@ -129,6 +135,43 @@ export default function Home() {
     }
   }, []);
 
+  const initDefaultPresets = useCallback(() => {
+    const defaultPresets = Array.from({ length: 10 }, (_, i) => ({
+      id: String(i + 1).padStart(2, '0'),
+      constructionName: "",
+      contractorName: "",
+      details: ""
+    }));
+    setPresets(defaultPresets);
+  }, []);
+
+  const fetchPresets = useCallback(async () => {
+    if (!session) return;
+    setIsLoadingPresets(true);
+    try {
+      const res = await fetch("/api/presets");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setPresets(data);
+      } else {
+        initDefaultPresets();
+      }
+    } catch (e) {
+      console.error("Failed to fetch presets", e);
+      initDefaultPresets();
+    } finally {
+      setIsLoadingPresets(false);
+    }
+  }, [session, initDefaultPresets]);
+
+  useEffect(() => {
+    if (session) {
+      fetchPresets();
+    } else {
+      setPresets([]);
+    }
+  }, [session, fetchPresets]);
+
   const [showSaveToast, setShowSaveToast] = useState(false);
 
   // 2. Auto-save current work
@@ -159,6 +202,64 @@ export default function Home() {
       setDimensions("");
       setSelectedImageBase64(null);
       setShowSaveToast(false);
+    }
+  };
+
+  const handleApplyPreset = (preset: any) => {
+    if (!preset.constructionName && !preset.contractorName && !preset.details) {
+      alert("選択されたプリセットにはデータが登録されていません");
+      return;
+    }
+    if (window.confirm(`プリセット「${preset.id}」の内容を適用しますか？\n（現在の入力内容は上書きされます）`)) {
+      setConstructionName(preset.constructionName || "");
+      setContractorName(preset.contractorName || "");
+      setDetails(preset.details || "");
+      setSaveFolderName(preset.constructionName || "");
+      setShowPresetModal(false);
+    }
+  };
+
+  const handleSavePreset = async (presetId: string) => {
+    if (!session) {
+      alert("Googleにログインしてください");
+      return;
+    }
+    if (!window.confirm(`現在の入力内容でプリセット「${presetId}」を上書き保存しますか？`)) {
+      return;
+    }
+
+    setIsSavingPreset(true);
+    try {
+      const updatedPresets = presets.map(p => {
+        if (p.id === presetId) {
+          return {
+            id: presetId,
+            constructionName,
+            contractorName,
+            details
+          };
+        }
+        return p;
+      });
+
+      const res = await fetch("/api/presets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedPresets),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPresets(updatedPresets);
+        alert(`プリセット「${presetId}」を保存しました`);
+      } else {
+        alert("プリセットの保存に失敗しました: " + (data.error || "Unknown error"));
+      }
+    } catch (e) {
+      alert("通信エラーが発生しました");
+      console.error(e);
+    } finally {
+      setIsSavingPreset(false);
     }
   };
 
@@ -707,13 +808,16 @@ export default function Home() {
               </div>
             )}
 
-            {/* 新規登録 / 履歴読み込み ボタン */}
-            <div style={{ display: "flex", gap: "10px", marginBottom: "15px" }}>
-              <button className={`${styles.button} ${styles.secondary}`} style={{ flex: 1, padding: "12px", fontSize: "14px", backgroundColor: "#ff9800" }} onClick={handleNewRegistration}>
+            {/* 新規登録 / 履歴読み込み / 定型文 ボタン */}
+            <div style={{ display: "flex", gap: "10px", marginBottom: "15px", flexWrap: "wrap" }}>
+              <button className={`${styles.button} ${styles.secondary}`} style={{ flex: 1, minWidth: "120px", padding: "12px", fontSize: "14px", backgroundColor: "#ff9800" }} onClick={handleNewRegistration}>
                 <FilePlus size={18} /> 新規登録(クリア)
               </button>
-              <button className={`${styles.button} ${styles.secondary}`} style={{ flex: 1, padding: "12px", fontSize: "14px", backgroundColor: "#2196f3" }} onClick={() => setShowHistoryModal(true)}>
+              <button className={`${styles.button} ${styles.secondary}`} style={{ flex: 1, minWidth: "120px", padding: "12px", fontSize: "14px", backgroundColor: "#2196f3" }} onClick={() => setShowHistoryModal(true)}>
                 <FolderOpen size={18} /> 履歴内容を開く
+              </button>
+              <button className={`${styles.button} ${styles.secondary}`} style={{ flex: 1, minWidth: "120px", padding: "12px", fontSize: "14px", backgroundColor: "#4caf50" }} onClick={() => setShowPresetModal(true)}>
+                <ClipboardList size={18} /> 定型文(プリセット)
               </button>
             </div>
 
@@ -829,6 +933,91 @@ export default function Home() {
                       <div style={{ fontSize: "12px", color: "#888" }}>{item.date}</div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 定型文（プリセット）モーダル */}
+        {showPresetModal && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.8)", zIndex: 1000, padding: "20px", display: "flex", flexDirection: "column" }}>
+            <div style={{ backgroundColor: "#222", borderRadius: "12px", padding: "20px", flex: 1, overflowY: "auto", position: "relative" }}>
+              <button onClick={() => setShowPresetModal(false)} style={{ position: "absolute", top: "15px", right: "15px", background: "none", border: "none", color: "white", cursor: "pointer" }}>
+                <X size={24} />
+              </button>
+              <h2 style={{ marginTop: 0, marginBottom: "5px", fontSize: "18px" }}>定型文（プリセット）の選択・登録</h2>
+              <p style={{ fontSize: "12px", color: "#aaa", marginBottom: "20px" }}>よく使う工事情報を最大10個まで登録して簡単に呼び出せます（Googleドライブ連携）</p>
+              
+              {!session ? (
+                <div style={{ textAlign: "center", padding: "40px 20px" }}>
+                  <p style={{ color: "#ff9800", marginBottom: "15px" }}>プリセット機能を利用するにはGoogleログインが必要です。</p>
+                  <button onClick={() => { signIn("google"); setShowPresetModal(false); }} className={styles.button} style={{ display: "inline-flex", alignItems: "center", gap: "8px", margin: "0 auto" }}>
+                    <LogIn size={18} /> Googleでログインする
+                  </button>
+                </div>
+              ) : isLoadingPresets ? (
+                <p>プリセットを読み込み中...</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {presets.map(item => {
+                    const hasData = item.constructionName || item.contractorName || item.details;
+                    return (
+                      <div key={item.id} style={{ padding: "15px", backgroundColor: "#333", borderRadius: "8px", border: "1px solid #555" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                          <span style={{ fontWeight: "bold", color: "#4caf50", fontSize: "14px" }}>プリセット {item.id}</span>
+                          <span style={{ fontSize: "12px", color: hasData ? "#81c784" : "#888" }}>{hasData ? "登録済み" : "未登録"}</span>
+                        </div>
+                        {hasData ? (
+                          <div style={{ marginBottom: "15px", fontSize: "14px" }}>
+                            {item.constructionName && <div style={{ color: "#ffeb3b", marginBottom: "4px" }}><strong>工事名:</strong> {item.constructionName}</div>}
+                            {item.contractorName && <div style={{ color: "#fff", marginBottom: "4px" }}><strong>請負会社:</strong> {item.contractorName}</div>}
+                            {item.details && <div style={{ color: "#ccc", whiteSpace: "pre-wrap" }}><strong>内容:</strong> {item.details}</div>}
+                          </div>
+                        ) : (
+                          <div style={{ color: "#666", fontSize: "13px", marginBottom: "15px", fontStyle: "italic" }}>
+                            定型文が登録されていません。現在の入力内容を登録できます。
+                          </div>
+                        )}
+                        <div style={{ display: "flex", gap: "10px" }}>
+                          <button 
+                            onClick={() => handleApplyPreset(item)} 
+                            disabled={!hasData}
+                            style={{ 
+                              flex: 1, 
+                              padding: "8px 10px", 
+                              fontSize: "13px", 
+                              backgroundColor: hasData ? "#2196f3" : "#444", 
+                              color: hasData ? "white" : "#888", 
+                              border: "none", 
+                              borderRadius: "4px", 
+                              cursor: hasData ? "pointer" : "not-allowed",
+                              fontWeight: "bold"
+                            }}
+                          >
+                            適用する
+                          </button>
+                          <button 
+                            onClick={() => handleSavePreset(item.id)} 
+                            disabled={isSavingPreset}
+                            style={{ 
+                              flex: 1, 
+                              padding: "8px 10px", 
+                              fontSize: "13px", 
+                              backgroundColor: "#ff9800", 
+                              color: "white", 
+                              border: "none", 
+                              borderRadius: "4px", 
+                              cursor: "pointer",
+                              fontWeight: "bold"
+                            }}
+                          >
+                            現在値を保存
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
