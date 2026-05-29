@@ -42,21 +42,88 @@ export async function GET(req: Request) {
     });
     const drive = google.drive({ version: "v3", auth: oauth2Client });
 
-    // 初期状態（folderIdが指定されていない場合）は /電気仕事/工事記録 を取得
-    if (!folderId || folderId === "root") {
-      const folderId1 = await getOrCreateFolder(drive, "電気仕事");
-      folderId = await getOrCreateFolder(drive, "工事記録", folderId1);
+    // 工事記録フォルダのIDを特定する
+    const folderId1 = await getOrCreateFolder(drive, "電気仕事");
+    const koziKirokuFolderId = await getOrCreateFolder(drive, "工事記録", folderId1);
+
+    let folderName = "";
+    let isKoziKiroku = false;
+
+    if (!folderId || folderId === "root" || folderId === koziKirokuFolderId) {
+      folderId = koziKirokuFolderId;
+      folderName = "工事記録";
+      isKoziKiroku = true;
+    } else {
+      const folderMeta = await drive.files.get({
+        fileId: folderId,
+        fields: "name"
+      });
+      folderName = folderMeta.data.name || "";
     }
 
-    const query = `'${folderId}' in parents and trashed=false and name != 'presets.json'`;
-    const res = await drive.files.list({
-      q: query,
-      fields: "files(id, name, mimeType, webViewLink, iconLink, modifiedTime)",
-      orderBy: "folder, name desc"
-    });
+    let files: any[] = [];
+
+    if (isKoziKiroku) {
+      // 1. 工事記録直下：[工事名] フォルダのみを表示する（黒板フォルダや他のファイルを除外）
+      const query = `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and name != '黒板' and trashed=false`;
+      const res = await drive.files.list({
+        q: query,
+        fields: "files(id, name, mimeType, webViewLink, iconLink, modifiedTime)",
+        orderBy: "name desc"
+      });
+      files = res.data.files || [];
+    } else if (/^\d{4}$/.test(folderName)) {
+      // 2. 年フォルダ（例: 2025）の直下：月フォルダ（2桁の数字）のみを表示
+      const query = `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+      const res = await drive.files.list({
+        q: query,
+        fields: "files(id, name, mimeType, webViewLink, iconLink, modifiedTime)",
+        orderBy: "name desc"
+      });
+      files = (res.data.files || []).filter((f: any) => /^\d{2}$/.test(f.name));
+    } else if (/^\d{2}$/.test(folderName)) {
+      // 3. 月フォルダ（例: 05）の直下：Excelファイル（.xlsx）のみを表示
+      const query = `'${folderId}' in parents and mimeType!='application/vnd.google-apps.folder' and trashed=false`;
+      const res = await drive.files.list({
+        q: query,
+        fields: "files(id, name, mimeType, webViewLink, iconLink, modifiedTime)",
+        orderBy: "name desc"
+      });
+      files = (res.data.files || []).filter((f: any) => f.name.endsWith(".xlsx"));
+    } else {
+      // 4. [工事名] フォルダの直下：今年度の月フォルダと、前年度以前の年フォルダを同階層に表示する
+      const query = `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+      const res = await drive.files.list({
+        q: query,
+        fields: "files(id, name, mimeType, webViewLink, iconLink, modifiedTime)",
+        orderBy: "name desc"
+      });
+      const allDirs = res.data.files || [];
+      
+      const currentYear = new Date().getFullYear().toString();
+      const thisYearFolder = allDirs.find((f: any) => f.name === currentYear);
+
+      if (thisYearFolder) {
+        // 今年のフォルダが存在する場合、その中身（月フォルダ群）を取得
+        const monthsRes = await drive.files.list({
+          q: `'${thisYearFolder.id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+          fields: "files(id, name, mimeType, webViewLink, iconLink, modifiedTime)",
+          orderBy: "name desc"
+        });
+        const monthFiles = (monthsRes.data.files || []).filter((f: any) => /^\d{2}$/.test(f.name));
+        
+        // 今年のフォルダ自身を除外した年フォルダ（例: 2025）を取得
+        const otherYears = allDirs.filter((f: any) => f.name !== currentYear && /^\d{4}$/.test(f.name));
+        
+        files = [...monthFiles, ...otherYears];
+      } else {
+        // 今年のフォルダがない場合は、年フォルダ（4桁の数字）のみに絞り込む
+        files = allDirs.filter((f: any) => /^\d{4}$/.test(f.name));
+      }
+    }
 
     return NextResponse.json({ 
-      files: res.data.files, 
+      files: files, 
       currentFolderId: folderId 
     });
 

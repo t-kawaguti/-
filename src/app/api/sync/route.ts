@@ -68,13 +68,20 @@ export async function POST(req: Request) {
     const folderIdYear = await getOrCreateFolder(drive, year, folderId3);
     const folderIdMonth = await getOrCreateFolder(drive, month, folderIdYear);
 
+    // 事前にGoogle DriveファイルIDを取得
+    const idRes = await drive.files.generateIds({ count: 1 });
+    const fileId = idRes.data.ids?.[0];
+    if (!fileId) {
+      throw new Error("Google DriveのファイルID生成に失敗しました");
+    }
+
+    // アプリのオリジンを取得し再編集用URLを構築
+    const { origin } = new URL(req.url);
+    const editUrl = `${origin}/?editFileId=${fileId}`;
+
     // === 2. Excel (xlsx) の生成 ===
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("現場記録");
-
-    // カラム幅の設定
-    sheet.getColumn(1).width = 15;
-    sheet.getColumn(2).width = 50;
 
     // ヘッダー行
     sheet.addRow(["項目", "内容"]);
@@ -87,7 +94,11 @@ export async function POST(req: Request) {
     sheet.addRow(["工事内容", details || ""]);
     sheet.addRow(["工事記録", record || ""]);
     sheet.addRow(["場所", address || (location ? `${location.lat},${location.lng}` : "未取得")]);
+    sheet.addRow(["緯度経度", location ? `${location.lat},${location.lng}` : ""]);
+    sheet.addRow(["黒板タイプ", blackboardType === "large" ? "図面・寸法入り黒板(大)" : "標準黒板"]);
+    sheet.addRow(["寸法", dimensions || ""]);
     sheet.addRow(["日時", now.toLocaleString("ja-JP")]);
+    sheet.addRow(["アプリで再編集", { text: "このレコードをアプリで再編集する", hyperlink: editUrl }]);
 
     // 罫線と折り返し設定
     sheet.eachRow((row, rowNumber) => {
@@ -98,8 +109,18 @@ export async function POST(req: Request) {
         };
         cell.alignment = { wrapText: true, vertical: 'middle' };
       });
-      // 内容に応じて高さを自動調整する代わりに、少し高めにする
       if (rowNumber > 1) row.height = 30; 
+    });
+
+    // 「アプリで再編集」セルのフォントスタイルを青色・下線付きに設定
+    sheet.eachRow((row) => {
+      if (row.getCell(1).value === "アプリで再編集") {
+        row.getCell(2).font = {
+          color: { argb: "FF0000FF" },
+          underline: true,
+          bold: true
+        };
+      }
     });
 
     // 写真の埋め込み (imagesが存在する場合)
@@ -123,6 +144,35 @@ export async function POST(req: Request) {
       });
     }
 
+    // 列幅の自動調整ロジック（A列とB列のみ）
+    sheet.columns.forEach((column, colIndex) => {
+      if (colIndex > 1) return; // A列(0)とB列(1)のみ幅を調整
+      let maxColumnLength = 0;
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        let cellLength = 0;
+        if (cell.value) {
+          let valStr = "";
+          if (typeof cell.value === 'object') {
+            if ('text' in cell.value) {
+              valStr = (cell.value as any).text || "";
+            } else if ('hyperlink' in cell.value) {
+              valStr = (cell.value as any).text || "";
+            }
+          } else {
+            valStr = cell.value.toString();
+          }
+
+          cellLength = Array.from(valStr).reduce((acc: number, char: any) => {
+            return acc + (char.charCodeAt(0) > 127 ? 2 : 1);
+          }, 0);
+        }
+        if (cellLength > maxColumnLength) {
+          maxColumnLength = cellLength;
+        }
+      });
+      column.width = Math.max(15, maxColumnLength + 4);
+    });
+
     // Bufferへの書き出し
     const buffer = await workbook.xlsx.writeBuffer() as Buffer;
 
@@ -136,6 +186,7 @@ export async function POST(req: Request) {
 
     const uploadRes = await drive.files.create({
       requestBody: {
+        id: fileId, // 事前に取得したファイルIDを使用
         name: fileName,
         parents: [folderIdMonth],
       },
