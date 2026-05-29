@@ -31,6 +31,8 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     let folderId = searchParams.get("folderId");
+    const levelStr = searchParams.get("level");
+    const level = levelStr ? parseInt(levelStr, 10) : 0;
 
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
@@ -47,12 +49,11 @@ export async function GET(req: Request) {
     const koziKirokuFolderId = await getOrCreateFolder(drive, "工事記録", folderId1);
 
     let folderName = "";
-    let isKoziKiroku = false;
 
-    if (!folderId || folderId === "root" || folderId === koziKirokuFolderId) {
+    // levelが0であるか、IDが指定されていない、またはrootかkoziKirokuFolderIdの場合は、強制的に最上位階層とする
+    if (level === 0 || !folderId || folderId === "root" || folderId === koziKirokuFolderId) {
       folderId = koziKirokuFolderId;
       folderName = "工事記録";
-      isKoziKiroku = true;
     } else {
       const folderMeta = await drive.files.get({
         fileId: folderId,
@@ -63,8 +64,8 @@ export async function GET(req: Request) {
 
     let files: any[] = [];
 
-    if (isKoziKiroku) {
-      // 1. 工事記録直下：[工事名] フォルダのみを表示する（黒板フォルダや他のファイルを除外）
+    if (level === 0) {
+      // 1. 工事記録直下 (level=0)：[工事名] フォルダのみを表示する（黒板フォルダや他のファイルを除外）
       const query = `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and name != '黒板' and trashed=false`;
       const res = await drive.files.list({
         q: query,
@@ -72,26 +73,8 @@ export async function GET(req: Request) {
         orderBy: "name desc"
       });
       files = res.data.files || [];
-    } else if (/^\d{4}$/.test(folderName)) {
-      // 2. 年フォルダ（例: 2025）の直下：月フォルダ（2桁の数字）のみを表示
-      const query = `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-      const res = await drive.files.list({
-        q: query,
-        fields: "files(id, name, mimeType, webViewLink, iconLink, modifiedTime)",
-        orderBy: "name desc"
-      });
-      files = (res.data.files || []).filter((f: any) => /^\d{2}$/.test(f.name));
-    } else if (/^\d{2}$/.test(folderName)) {
-      // 3. 月フォルダ（例: 05）の直下：Excelファイル（.xlsx）のみを表示
-      const query = `'${folderId}' in parents and mimeType!='application/vnd.google-apps.folder' and trashed=false`;
-      const res = await drive.files.list({
-        q: query,
-        fields: "files(id, name, mimeType, webViewLink, iconLink, modifiedTime)",
-        orderBy: "name desc"
-      });
-      files = (res.data.files || []).filter((f: any) => f.name.endsWith(".xlsx"));
-    } else {
-      // 4. [工事名] フォルダの直下：今年度の月フォルダと、前年度以前の年フォルダを同階層に表示する
+    } else if (level === 1) {
+      // 2. [工事名] フォルダの直下 (level=1)：今年度の月フォルダと、前年度以前の年フォルダを同階層に表示する
       const query = `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
       const res = await drive.files.list({
         q: query,
@@ -120,6 +103,42 @@ export async function GET(req: Request) {
         // 今年のフォルダがない場合は、年フォルダ（4桁の数字）のみに絞り込む
         files = allDirs.filter((f: any) => /^\d{4}$/.test(f.name));
       }
+    } else if (level === 2) {
+      // 3. level=2 (年フォルダ、または今年の月フォルダ)
+      // 親フォルダの名前が4桁なら「年」、それ以外（2桁）なら「今年の月」と判別
+      const folderMeta = await drive.files.get({
+        fileId: folderId,
+        fields: "name"
+      });
+      const fName = folderMeta.data.name || "";
+      if (/^\d{4}$/.test(fName)) {
+        // 年フォルダ直下 ➔ 月フォルダ（2桁）を表示
+        const query = `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+        const res = await drive.files.list({
+          q: query,
+          fields: "files(id, name, mimeType, webViewLink, iconLink, modifiedTime)",
+          orderBy: "name desc"
+        });
+        files = (res.data.files || []).filter((f: any) => /^\d{2}$/.test(f.name));
+      } else {
+        // 今年の月フォルダ直下 ➔ Excelファイルのみを表示
+        const query = `'${folderId}' in parents and mimeType!='application/vnd.google-apps.folder' and trashed=false`;
+        const res = await drive.files.list({
+          q: query,
+          fields: "files(id, name, mimeType, webViewLink, iconLink, modifiedTime)",
+          orderBy: "name desc"
+        });
+        files = (res.data.files || []).filter((f: any) => f.name.endsWith(".xlsx"));
+      }
+    } else {
+      // 4. level=3 (過去の月フォルダ直下)：Excelファイル（.xlsx）のみを表示
+      const query = `'${folderId}' in parents and mimeType!='application/vnd.google-apps.folder' and trashed=false`;
+      const res = await drive.files.list({
+        q: query,
+        fields: "files(id, name, mimeType, webViewLink, iconLink, modifiedTime)",
+        orderBy: "name desc"
+      });
+      files = (res.data.files || []).filter((f: any) => f.name.endsWith(".xlsx"));
     }
 
     return NextResponse.json({ 

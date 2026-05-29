@@ -24,6 +24,7 @@ type DriveFile = {
 type Breadcrumb = {
   id: string;
   name: string;
+  level: number;
 };
 
 type HistoryRecord = {
@@ -61,7 +62,7 @@ export default function Home() {
   // Drive Explorer State
   const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
   const [isLoadingDrive, setIsLoadingDrive] = useState(false);
-  const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([{ id: "root", name: "工事記録" }]);
+  const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([{ id: "root", name: "工事記録", level: 0 }]);
 
   // History Load Modal
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -322,11 +323,11 @@ export default function Home() {
     }
   };
 
-  const fetchDriveContents = async (folderId: string, folderName: string) => {
+  const fetchDriveContents = async (folderId: string, folderName: string, nextLevel: number) => {
     if (!session) return;
     setIsLoadingDrive(true);
     try {
-      const res = await fetch(`/api/drive/list?folderId=${folderId}`);
+      const res = await fetch(`/api/drive/list?folderId=${folderId}&level=${nextLevel}`);
       const data = await res.json();
       if (data.files) {
         setDriveFiles(data.files);
@@ -334,7 +335,7 @@ export default function Home() {
         if (crumbIndex >= 0) {
           setBreadcrumbs(breadcrumbs.slice(0, crumbIndex + 1));
         } else {
-          setBreadcrumbs([...breadcrumbs, { id: folderId === "root" ? data.currentFolderId : folderId, name: folderName }]);
+          setBreadcrumbs([...breadcrumbs, { id: folderId === "root" ? data.currentFolderId : folderId, name: folderName, level: nextLevel }]);
         }
       }
     } catch (e) {
@@ -346,13 +347,14 @@ export default function Home() {
 
   useEffect(() => {
     if (activeTab === "history" && driveFiles.length === 0) {
-      fetchDriveContents("root", "工事記録");
+      fetchDriveContents("root", "工事記録", 0);
     }
   }, [activeTab, session]);
 
   const handleDriveItemClick = (file: DriveFile) => {
     if (file.mimeType === "application/vnd.google-apps.folder") {
-      fetchDriveContents(file.id, file.name);
+      const currentLevel = breadcrumbs[breadcrumbs.length - 1]?.level ?? 0;
+      fetchDriveContents(file.id, file.name, currentLevel + 1);
     } else if (file.webViewLink) {
       window.open(file.webViewLink, "_blank");
     }
@@ -1206,7 +1208,7 @@ export default function Home() {
                     <React.Fragment key={crumb.id}>
                       <span 
                         className={styles.driveCrumb} 
-                        onClick={() => fetchDriveContents(crumb.id, crumb.name)}
+                        onClick={() => fetchDriveContents(crumb.id, crumb.name, crumb.level)}
                       >
                         {crumb.name}
                       </span>
