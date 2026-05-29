@@ -108,9 +108,7 @@ export async function POST(req: Request) {
 
     // 11行目に再編集リンクを配置 (A11:E11を結合)
     sheet.getCell('A11').value = {
-      text: '➔ この現場記録をアプリで再編集する',
-      hyperlink: editUrl,
-      tooltip: 'アプリを開いてこのデータを再編集します'
+      formula: `HYPERLINK("${editUrl}", "➔ この現場記録をアプリで再編集する")`
     };
     sheet.getCell('A11').font = {
       color: { argb: 'FF0000FF' },

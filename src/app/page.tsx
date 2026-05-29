@@ -754,10 +754,7 @@ export default function Home() {
         }, ...localHistory];
         setLocalHistory(newHistory);
         localStorage.setItem("app_records_history", JSON.stringify(newHistory));
-
-        if (window.confirm("保存が完了しました！\nOKを押すとGoogleドライブに保存されたExcelシートを開きます。")) {
-          window.open(data.fileLink, "_blank");
-        }
+        alert("保存が完了しました！");
         
         setCapturedImages([]);
         setRecord(""); 

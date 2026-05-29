@@ -83,25 +83,25 @@ export async function GET(req: Request) {
       });
       const allDirs = res.data.files || [];
       
-      const currentYear = new Date().getFullYear().toString();
-      const thisYearFolder = allDirs.find((f: any) => f.name === currentYear);
+      // 4桁の年フォルダのみを抽出 (降順ソートされているため先頭が最新)
+      const yearFolders = allDirs.filter((f: any) => /^\d{4}$/.test(f.name));
+      const latestYearFolder = yearFolders[0]; // 最も新しい年フォルダ（今年度）
 
-      if (thisYearFolder) {
-        // 今年のフォルダが存在する場合、その中身（月フォルダ群）を取得
+      if (latestYearFolder) {
+        // 最新の年フォルダの中身（月フォルダ群）を取得
         const monthsRes = await drive.files.list({
-          q: `'${thisYearFolder.id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+          q: `'${latestYearFolder.id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
           fields: "files(id, name, mimeType, webViewLink, iconLink, modifiedTime)",
           orderBy: "name desc"
         });
         const monthFiles = (monthsRes.data.files || []).filter((f: any) => /^\d{2}$/.test(f.name));
         
-        // 今年のフォルダ自身を除外した年フォルダ（例: 2025）を取得
-        const otherYears = allDirs.filter((f: any) => f.name !== currentYear && /^\d{4}$/.test(f.name));
+        // 最新の年フォルダ以外の年フォルダ（前年度以前）を取得
+        const otherYears = yearFolders.slice(1);
         
         files = [...monthFiles, ...otherYears];
       } else {
-        // 今年のフォルダがない場合は、年フォルダ（4桁の数字）のみに絞り込む
-        files = allDirs.filter((f: any) => /^\d{4}$/.test(f.name));
+        files = [];
       }
     } else if (level === 2) {
       // 3. level=2 (年フォルダ、または今年の月フォルダ)
