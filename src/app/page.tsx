@@ -172,6 +172,55 @@ export default function Home() {
     }
   }, [session, fetchPresets]);
 
+  // URLからeditFileIdを取得して再編集データをロードする
+  useEffect(() => {
+    const loadExcelData = async (fileId: string) => {
+      try {
+        const res = await fetch(`/api/drive/read-excel?fileId=${fileId}`);
+        const result = await res.json();
+        if (result.success && result.data) {
+          const data = result.data;
+          if (data.constructionName) {
+            setConstructionName(data.constructionName);
+            setSaveFolderName(data.constructionName);
+          }
+          if (data.contractorName) setContractorName(data.contractorName);
+          if (data.details) setDetails(data.details);
+          if (data.record) setRecord(data.record);
+          if (data.address) setAddress(data.address);
+          if (data.location) setLocation(data.location);
+          if (data.blackboardType) setBlackboardType(data.blackboardType);
+          if (data.dimensions) setDimensions(data.dimensions);
+
+          alert("Excelから編集データを読み込みました！");
+          
+          // URLのパラメータをクリアしてリロード時の多重ロードを防ぐ
+          const url = new URL(window.location.href);
+          url.searchParams.delete("editFileId");
+          window.history.replaceState({}, document.title, url.pathname + url.search);
+        } else {
+          alert("Excelデータの読み込みに失敗しました: " + (result.error || "エラーが発生しました"));
+        }
+      } catch (e) {
+        console.error(e);
+        alert("通信エラーによりExcelデータを読み込めませんでした");
+      }
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const editFileId = urlParams.get("editFileId");
+    if (editFileId) {
+      if (session) {
+        loadExcelData(editFileId);
+      } else {
+        // 未ログイン時はログインを促す
+        if (window.confirm("Excelからデータを復元するにはGoogleログインが必要です。ログインしますか？")) {
+          signIn("google");
+        }
+      }
+    }
+  }, [session]);
+
   const [showSaveToast, setShowSaveToast] = useState(false);
 
   // 2. Auto-save current work
@@ -574,8 +623,8 @@ export default function Home() {
       alert("カメラの初期化に失敗しました。ページを再読み込みしてください。");
       return;
     }
-    if (capturedImages.length >= 3) {
-      alert("写真は最大3枚までです。");
+    if (capturedImages.length >= 10) {
+      alert("写真は最大10枚までです。");
       return;
     }
     
@@ -624,8 +673,8 @@ export default function Home() {
   }, [webcamRef, capturedImages, drawBlackboard]);
 
   const handleNativeCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (capturedImages.length >= 3) {
-      alert("写真は最大3枚までです。");
+    if (capturedImages.length >= 10) {
+      alert("写真は最大10枚までです。");
       return;
     }
     const file = e.target.files?.[0];
@@ -1102,8 +1151,8 @@ export default function Home() {
                 </div>
 
                 <div className={styles.controls} style={{ margin: 0 }}>
-                  <button className={styles.button} onClick={capture} disabled={capturedImages.length >= 3} style={{ padding: "15px", fontSize: "16px", width: "100%" }}>
-                    <Camera size={20} /> 撮影 ({capturedImages.length}/3)
+                  <button className={styles.button} onClick={capture} disabled={capturedImages.length >= 10} style={{ padding: "15px", fontSize: "16px", width: "100%" }}>
+                    <Camera size={20} /> 撮影 ({capturedImages.length}/10)
                   </button>
                 </div>
 
